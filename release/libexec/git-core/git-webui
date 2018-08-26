@@ -136,6 +136,7 @@ class WebUiRequestHandler(SimpleHTTPRequestHandler):
             else:
                 self.send_error(403)
         elif self.path == "/transfer":
+            x = os.getcwd()
             content_length = int(self.headers["Content-Length"])
             content = self.rfile.read(content_length)
             # Convention : First line = git arguments, rest = git process stdin
@@ -148,7 +149,7 @@ class WebUiRequestHandler(SimpleHTTPRequestHandler):
                 stdin = b""
             if sys.version > '3':
                 args = codecs.decode(args, "utf-8")
-            cmd = shlex.split("node /Users/piriyaponglaopongsit/pizzahack/gitthereum/bin/transfer.js --push --quiet --path /Users/piriyaponglaopongsit/pizzahack/real-chain " + args)
+            cmd = shlex.split("node ../gitthereum/bin/transfer.js --push --quiet --path " + x + " " + args)
             print(cmd)
             # self.send_error(200)
             self.process(cmd, stdin, True, True)
