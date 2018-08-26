@@ -135,7 +135,7 @@ class WebUiRequestHandler(SimpleHTTPRequestHandler):
                 self.process(cmd, stdin, True, True)
             else:
                 self.send_error(403)
-        if self.path == "/transfer":
+        elif self.path == "/transfer":
             content_length = int(self.headers["Content-Length"])
             content = self.rfile.read(content_length)
             # Convention : First line = git arguments, rest = git process stdin

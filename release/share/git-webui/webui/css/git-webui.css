@@ -467,7 +467,26 @@ body {
 #tree-view .tree-item-symlink {
   font-style: italic;
 }
-#workspace-view,
+#check-balance, #transfer {
+  line-height: 25px;
+  display: flex;
+  display: -webkit-flex;
+  min-height: 0;
+  min-width: 0;
+  flex-direction: column;
+  -webkit-flex-direction: column;
+  flex: 1 1 0;
+  -webkit-flex: 1 1 0;
+}
+#submit-tx, #check-balance-button {
+  background-color: green;
+  color: white;
+}
+#balance {
+  font-weight: bold;
+  font-size: 32px
+}
+#workspace-view, #transfer-view,
 #commit-explorer-view {
   display: flex;
   display: -webkit-flex;

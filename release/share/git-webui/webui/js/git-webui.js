@@ -451,23 +451,26 @@ webui.TransferView = function(mainView) {
 
     self.element = $('<div id="transfer-view">' +
         '<div id="check-balance">'+
-            '<label for="check-balance-account">account</label>'+
+            '<h3>Check balance</h3>' +
+            '<label for="check-balance-account">Account: </label>    '+
             '<input id="check-balance-account" name="check-balance-account" type="text">' +
             '<br/>'+
-            '<button id="check-balance-button"> check balance </button>' +
-            '<p id="balance">balance: </p>'+
+            '<button id="check-balance-button"> Check balance </button>' +
+            '<br><br>' +
+            '<p id="balance"></p>'+
         '</div>'+
         '<div id="transfer">' +
-            '<label for="to">to</label>'+
+            '<h3>Transfer</h3>' +
+            '<label for="to">To:</label>'+
             '<input id="to" name="to" type="text">' +
             '<br/>'+
-            '<label for="amount">amount</label>'+
+            '<label for="amount">Amount:</label>'+
             '<input id="amount" name="amount" type="text">' +
             '<br/>'+
-            '<label for="fee">fee</label>'+
+            '<label for="fee">Fee:</label>'+
             '<input id="fee" name="fee" value="100" type="text">' +
             '<br/>'+
-            '<button id="submit-tx"> submit </button>' +
+            '<button id="submit-tx"> Transfer </button>' +
         '</div>'+
     '</div>')[0];
 
@@ -487,7 +490,8 @@ webui.TransferView = function(mainView) {
     self.checkBalanceButton.click(function(event) {
         const checkBalanceAccount = $('#check-balance-account', self.element).val()
         webui.git('show master:accounts/'+checkBalanceAccount+'/balance', function(data) {
-            $('#balance', self.element).text('balance: '+ data)
+            data = data.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            $('#balance', self.element).text('Your balance is: '+ data)
         })
     })
 }
