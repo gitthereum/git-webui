@@ -109,6 +109,65 @@ webui.git = function(cmd, arg1, arg2) {
     });
 };
 
+webui.transfer = function(cmd, arg1, arg2) {
+    // cmd = git command line arguments
+    // other arguments = optional stdin content and a callback function:
+    // ex:
+    // git("log", mycallback)
+    // git("commit -F -", "my commit message", mycallback)
+    if (typeof(arg1) == "function") {
+        var callback = arg1;
+    } else {
+        // Convention : first line = git arguments, rest = process stdin
+        cmd += "\n" + arg1;
+        var callback = arg2;
+    }
+    $.post("transfer", cmd, function(data, status, xhr) {
+        if (xhr.status == 200) {
+            // Convention : last lines are footer meta data like headers. An empty line marks the start if the footers
+            var footers = {};
+            var fIndex = data.length;
+            while (true) {
+                var oldFIndex = fIndex;
+                var fIndex = data.lastIndexOf("\r\n", fIndex - 1);
+                var line = data.substring(fIndex + 2, oldFIndex);
+                if (line.length > 0) {
+                    var footer = line.split(": ");
+                    footers[footer[0]] = footer[1];
+                } else {
+                    break;
+                }
+            }
+
+            var messageStartIndex = fIndex - parseInt(footers["Git-Stderr-Length"]);
+            var message = data.substring(messageStartIndex, fIndex);
+            var output = data.substring(0, messageStartIndex);
+            var rcode = parseInt(footers["Git-Return-Code"]);
+            if (rcode == 0) {
+                if (callback) {
+                    callback(output);
+                }
+                // Return code is 0 but there is stderr output: this is a warning message
+                if (message.length > 0) {
+                    console.log(message);
+                    webui.showWarning(message);
+                }
+                $("#error-modal .alert").text("");
+            } else {
+                console.log(message);
+                webui.showError(message);
+            }
+        } else {
+            console.log(data);
+            webui.showError(data);
+        }
+    }, "text")
+    .fail(function(xhr, status, error) {
+        webui.showError("Git webui server not running");
+    });
+};
+
+
 webui.detachChildren = function(element) {
     while (element.firstChild) {
         element.removeChild(element.firstChild);
@@ -303,6 +362,9 @@ webui.SideBarView = function(mainView) {
     self.element = $(   '<div id="sidebar">' +
                             '<a href="#" data-toggle="modal" data-target="#help-modal"><img id="sidebar-logo" src="/img/git-logo.png"></a>' +
                             '<div id="sidebar-content">' +
+                                '<section id="sidebar-transfer">'+
+                                    '<h4>Gitthereum</h4>'+
+                                '</section>'+
                                 '<section id="sidebar-workspace">' +
                                     '<h4>Workspace</h4>' +
                                 '</section>' +
@@ -331,6 +393,13 @@ webui.SideBarView = function(mainView) {
             self.mainView.workspaceView.update("stage");
         });
     }
+    
+    var transferElement = $("#sidebar-transfer h4", self.element);
+    transferElement.click(function (event) {
+        $("*", self.element).removeClass("active");
+        transferElement.addClass("active");
+        self.mainView.transferView.update();
+    })
 
     var remoteElement = $("#sidebar-remote h4", self.element);
     remoteElement.click(function (event) {
@@ -343,6 +412,54 @@ webui.SideBarView = function(mainView) {
     self.fetchSection($("#sidebar-remote-branches", self.element)[0], "Remote Branches", "remote-branches", "branch --remotes");
     self.fetchSection($("#sidebar-tags", self.element)[0], "Tags", "tags", "tag");
 };
+
+webui.TransferView = function(mainView) {
+    var self = this
+
+    self.show = function() {
+        mainView.switchTo(self.element)
+    }
+
+    self.update = function() {
+        self.show()
+    }
+
+    self.element = $('<div id="transfer-view">' +
+        '<label for="check-balance-account">account</label>'+
+        '<input id="check-balance-account" name="check-balance-account" type="text">' +
+        '<br/>'+
+        '<button id="check-balance"> check balance </button>' +
+        '<p id="balance">balance: </p>'+
+        '<hr/>'+
+        '<label for="to">to</label>'+
+        '<input id="to" name="to" type="text">' +
+        '<br/>'+
+        '<label for="amount">amount</label>'+
+        '<input id="amount" name="amount" type="text">' +
+        '<br/>'+
+        '<label for="fee">fee</label>'+
+        '<input id="fee" name="fee" value="100" type="text">' +
+        '<br/>'+
+        '<button id="submit-tx"> submit </button>' +
+    '</div>')[0];
+
+    self.button = $('#submit-tx', self.element)
+    self.button.click(function(event) {
+        const fee = $('#fee', self.element).val()
+        const amount = $('#amount', self.element).val()
+        const to = $('#to', self.element).val()
+        webui.transfer('--to ' + to + ' --fee '+ fee + ' ' + amount, function(data) {
+            // window.location.reload()
+        })
+    })
+    self.checkBalanceButton = $('#check-balance', self.element)
+    self.checkBalanceButton.click(function(event) {
+        const checkBalanceAccount = $('#check-balance-account', self.element).val()
+        webui.git('show master:accounts/'+checkBalanceAccount+'/balance', function(data) {
+            $('#balance', self.element).text('balance: '+ data)
+        })
+    })
+}
 
 /*
  * == LogView =================================================================
@@ -1740,6 +1857,8 @@ function MainUi() {
 
                 self.mainView = $('<div id="main-view">')[0];
                 globalContainer.appendChild(self.mainView);
+
+                self.transferView = new webui.TransferView(self);
 
                 self.historyView = new webui.HistoryView(self);
                 self.remoteView = new webui.RemoteView(self);

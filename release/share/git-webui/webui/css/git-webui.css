@@ -91,6 +91,9 @@ body {
   cursor: pointer;
   padding: 10px 0;
 }
+#sidebar #sidebar-content #sidebar-transfer h4:before {
+  content: url(/img/daemon.svg);
+}
 #sidebar #sidebar-content #sidebar-workspace h4:before {
   content: url(/img/computer.svg);
 }
@@ -150,6 +153,7 @@ body {
   flex: 1 1 0;
   -webkit-flex: 1 1 0;
 }
+
 #log-view {
   flex: 1 1 0;
   -webkit-flex: 1 1 0;
